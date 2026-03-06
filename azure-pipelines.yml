@@ -11,6 +11,7 @@ variables:
   repoUrl: 'https://github.com/souravb-smu/odoo17.git'
   stagePath: '/home/azureuser'
   updateScript: '$(stagePath)/deploy-temp/update_code.sh'
+  restoreDBscript: '$(stagePath)/deploy-temp/restore_db.sh'
   dbName: 'odoo'
   dbUser: 'odoo17'
 
@@ -112,9 +113,8 @@ stages:
               commands: |
                 set -e
 
-                cd $(stagePath)/deploy-temp
-                echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' chmod +x ./restore_db.sh
-                echo "$(DB_PASSWORD)" | sudo -S -p '' ./restore_db.sh \
+                echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' chmod +x $(restoreDBscript)
+                echo "$(DB_PASSWORD)" | sudo -S -p '' $(restoreDBscript) \
                     "$(DB_PASSWORD)" \
                     "$(dbUser)" \
                     "$(dbName)" \
