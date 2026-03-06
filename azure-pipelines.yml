@@ -29,6 +29,7 @@ stages:
         deploy:
           steps:
 
+          # Sync code
           - task: SSH@0
             displayName: "Sync Code - Staging"
             inputs:
@@ -37,7 +38,6 @@ stages:
               commands: |
                 set -e
                 echo "Deploying branch: $(Build.SourceBranchName)"
-
                 cd $(stagePath)
                 rm -rf deploy-temp *-odoo17
 
@@ -48,6 +48,7 @@ stages:
                 rm -f .DS_Store
                 rm -rf .github
 
+          # Run update script
           - task: SSH@0
             displayName: "Run Update Script - Staging"
             inputs:
@@ -73,6 +74,7 @@ stages:
         deploy:
           steps:
 
+          # Sync code
           - task: SSH@0
             displayName: "Sync Code - Production"
             inputs:
@@ -81,7 +83,6 @@ stages:
               commands: |
                 set -e
                 echo "Deploying branch: $(Build.SourceBranchName)"
-
                 cd $(stagePath)
                 rm -rf deploy-temp *-odoo17
 
@@ -92,6 +93,36 @@ stages:
                 rm -f .DS_Store
                 rm -rf .github
 
+          # Uncompress SQL on VM
+          - task: SSH@0
+            displayName: "Uncompress odoo.sql.gz on VM"
+            inputs:
+              sshEndpoint: 'ssh-odoo17-production'
+              runOptions: commands
+              commands: |
+                set -e
+                cd $(stagePath)/deploy-temp/
+                echo "Uncompressing odoo.sql.gz..."
+                gunzip -c $(tempDeploy)/odoo.sql.gz > $(tempDeploy)/odoo.sql
+                echo "Uncompress complete: $(stagePath)/deploy-temp/odoo.sql"
+
+          # Restore Database
+          - task: SSH@0
+            displayName: "Restore Database"
+            inputs:
+              sshEndpoint: 'ssh-odoo17-production'
+              runOptions: commands
+              commands: |
+                set -e
+                echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' cp /home/azureuser/deploy-temp/restore_db.sh /tmp/
+                echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' cp /home/azureuser/deploy-temp/odoo.sql /tmp/
+
+                echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' chmod +x /tmp/restore_db.sh
+                echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' chmod 644 /tmp/odoo.sql
+
+                echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' -u postgres /tmp/restore_db.sh "odoo17" "odoo" "/tmp/odoo.sql"
+
+          # Run update script
           - task: SSH@0
             displayName: "Run Update Script - Production"
             inputs:
