@@ -17,6 +17,7 @@ services:
       POSTGRES_USER: odoo
     volumes:
       - odoo-db-data:/var/lib/postgresql/data
+      - ./odoo.sql.gz:/docker-entrypoint-initdb.d/odoo.sql.gz
 volumes:
   odoo-web-data:
   odoo-db-data:
