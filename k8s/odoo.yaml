@@ -25,6 +25,8 @@ spec:
       labels:
         app: odoo
     spec:
+      securityContext:
+        fsGroup: 101
       containers:
         - name: odoo
           image: jiaying0811/odoo17:latest
